@@ -5,7 +5,7 @@
   };
 
   outputs = { self, nixpkgs, flake-utils }:
-    let name = "bevy-proj"; in {
+    let name = "bevy-dvd"; in {
       overlays.default = final: prev:
         let
           toml = builtins.fromTOML (builtins.readFile "${self}/Cargo.toml");
@@ -15,6 +15,7 @@
             lib
             libxkbcommon
             lld
+            makeWrapper
             pkg-config
             rustPlatform
             stdenv
@@ -29,7 +30,7 @@
             inherit (toml.package) version;
             cargoLock.lockFile = "${self}/Cargo.lock";
 
-            nativeBuildInputs = [ lld ] ++
+            nativeBuildInputs = [ lld makeWrapper ] ++
               lib.optionals stdenv.isLinux [
                 pkg-config
               ];
@@ -48,6 +49,13 @@
               darwin.apple_sdk.frameworks.Cocoa
               rustPlatform.bindgenHook
             ];
+
+            postInstall = ''
+              mkdir -p $out/share
+              cp -r assets $out/share
+                wrapProgram "$out/bin/${toml.package.name}" \
+                  --set-default CARGO_MANIFEST_DIR $out/share
+            '';
 
           });
         in
